@@ -3,9 +3,9 @@ FROM rust:1.84-slim as builder
 
 WORKDIR /usr/src/app
 
-# Install build dependencies
+# Install build dependencies (including cmake and nasm for aws-lc-sys)
 RUN apt-get update && \
-    apt-get install -y pkg-config libssl-dev && \
+    apt-get install -y pkg-config libssl-dev cmake nasm && \
     rm -rf /var/lib/apt/lists/*
 
 # Copy manifests
@@ -28,15 +28,19 @@ FROM debian:bookworm-slim
 
 WORKDIR /app
 
-# Install runtime dependencies
+# Install runtime dependencies (including Tor)
 RUN apt-get update && \
-    apt-get install -y ca-certificates libssl3 && \
+    apt-get install -y ca-certificates libssl3 tor && \
     rm -rf /var/lib/apt/lists/*
 
 # Copy the binary from builder
-COPY --from=builder /usr/src/app/target/release/your-app-name /app/
+COPY --from=builder /usr/src/app/target/release/DARKCAT /usr/local/bin/darkweb-forensics
+
+# Copy entrypoint script
+COPY docker-entrypoint.sh /app/
+RUN chmod +x /app/docker-entrypoint.sh
 
 EXPOSE 8080
 
-ENTRYPOINT ["docker-entrypoint.sh"]
-CMD ["/app/DARKCAT"]
+ENTRYPOINT ["/app/docker-entrypoint.sh"]
+CMD ["status"]

@@ -41,6 +41,12 @@ enum Commands {
         #[arg(short, long)]
         url: String,
     },
+    /// Scan multiple URLs from a file
+    BatchScan {
+        /// Path to file containing URLs (one per line)
+        #[arg(short, long)]
+        file: String,
+    },
     /// Check Tor connectivity
     Status,
 }
@@ -60,6 +66,7 @@ async fn main() -> Result<()> {
             println!("🔄 Checking Tor connection...");
             check_tor_status().await?;
         }
+        _ => {}
     }
 
     Ok(())
@@ -71,14 +78,14 @@ async fn scan_onion(url: &str) -> Result<()> {
 
     match client.get(url).send().await {
         Ok(response) => {
-            println!("✅ Status: {}", response.status());
-            println!("📊 Headers: {:#?}", response.headers());
+            println!("Status: {}", response.status());
+            println!("Headers: {:#?}", response.headers());
 
             let body = response.text().await?;
             println!("📄 Content length: {} bytes", body.len());
         }
         Err(e) => {
-            println!("❌ Error: {}", e);
+            println!("Error: {}", e);
         }
     }
 
@@ -91,11 +98,11 @@ async fn check_tor_status() -> Result<()> {
     match client.get("https://check.torproject.org/api/ip").send().await {
         Ok(response) => {
             let text = response.text().await?;
-            println!("✅ Tor connection active");
-            println!("📡 Response: {}", text);
+            println!("Tor connection active");
+            println!("Response: {}", text);
         }
         Err(e) => {
-            println!("❌ Tor connection failed: {}", e);
+            println!("Tor connection failed: {}", e);
         }
     }
 
