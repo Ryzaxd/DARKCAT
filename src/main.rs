@@ -59,11 +59,11 @@ async fn main() -> Result<()> {
 
     match cli.command {
         Commands::Scan { url } => {
-            println!("🔍 Scanning: {}", url);
+            println!("Scanning: {}", url);
             scan_onion(&url).await?;
         }
         Commands::Status => {
-            println!("🔄 Checking Tor connection...");
+            println!("Checking Tor connection...");
             check_tor_status().await?;
         }
         _ => {}
@@ -82,7 +82,7 @@ async fn scan_onion(url: &str) -> Result<()> {
             println!("Headers: {:#?}", response.headers());
 
             let body = response.text().await?;
-            println!("📄 Content length: {} bytes", body.len());
+            println!("Content length: {} bytes", body.len());
         }
         Err(e) => {
             println!("Error: {}", e);
