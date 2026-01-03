@@ -1,6 +1,6 @@
 use clap::{Parser, Subcommand};
 use reqwest::Client;
-use anyhow::Result;
+use anyhow::{Result, anyhow};
 use std::time::Duration;
 
 const ASCII_ART: &str = r#"
@@ -24,7 +24,6 @@ _pb__\,`"=,,,=="',___,,,-----'''----'_'_'_''-;''
                              `'
 "#;
 
-
 #[derive(Parser)]
 #[command(name = "DARKCAT")]
 #[command(about = "Dark web recon claw - CLI tool for darkweb digital forensics", long_about = None)]
@@ -37,11 +36,11 @@ struct Cli {
 enum Commands {
     /// Scan a .onion URL
     Scan {
-        /// The .onion URL to scan
+        /// The .onion URL to scan (with or without http/https)
         #[arg(short, long)]
         url: String,
     },
-    /// Scan multiple URLs from a file
+    /// Scan multiple URLs from a file (one per line)
     BatchScan {
         /// Path to file containing URLs (one per line)
         #[arg(short, long)]
@@ -59,35 +58,69 @@ async fn main() -> Result<()> {
 
     match cli.command {
         Commands::Scan { url } => {
+            let url = normalize_url(&url);
             println!("Scanning: {}", url);
             scan_onion(&url).await?;
+        }
+        Commands::BatchScan { file } => {
+            println!("Batch scanning file: {}", file);
+            batch_scan(&file).await?;
         }
         Commands::Status => {
             println!("Checking Tor connection...");
             check_tor_status().await?;
         }
-        _ => {}
     }
 
     Ok(())
 }
 
+fn normalize_url(input: &str) -> String {
+    let trimmed = input.trim();
+    if trimmed.starts_with("http://") || trimmed.starts_with("https://") {
+        trimmed.to_string()
+    } else {
+        format!("http://{}", trimmed)
+    }
+}
+
+async fn batch_scan(path: &str) -> Result<()> {
+    use tokio::io::{AsyncBufReadExt, BufReader};
+    use tokio::fs::File;
+
+    let file = File::open(path).await
+        .map_err(|e| anyhow!("Could not open file '{}': {}", path, e))?;
+    let mut lines = BufReader::new(file).lines();
+
+    while let Some(line) = lines.next_line().await? {
+        let line = line.trim();
+        if line.is_empty() || line.starts_with('#') {
+            continue;
+        }
+        let url = normalize_url(line);
+        println!("\n=== Scanning: {} ===", url);
+        if let Err(e) = scan_onion(&url).await {
+            eprintln!("Scan failed for {}: {}", url, e);
+        }
+    }
+
+    Ok(())
+}
 
 async fn scan_onion(url: &str) -> Result<()> {
     let client = create_tor_client()?;
 
-    match client.get(url).send().await {
-        Ok(response) => {
-            println!("Status: {}", response.status());
-            println!("Headers: {:#?}", response.headers());
+    let response = client
+        .get(url)
+        .send()
+        .await
+        .map_err(|e| anyhow!("Request failed: {}", e))?;
 
-            let body = response.text().await?;
-            println!("Content length: {} bytes", body.len());
-        }
-        Err(e) => {
-            println!("Error: {}", e);
-        }
-    }
+    println!("Status: {}", response.status());
+    println!("Headers: {:#?}", response.headers());
+
+    let body = response.text().await?;
+    println!("Content length: {} bytes", body.len());
 
     Ok(())
 }
@@ -95,16 +128,15 @@ async fn scan_onion(url: &str) -> Result<()> {
 async fn check_tor_status() -> Result<()> {
     let client = create_tor_client()?;
 
-    match client.get("https://check.torproject.org/api/ip").send().await {
-        Ok(response) => {
-            let text = response.text().await?;
-            println!("Tor connection active");
-            println!("Response: {}", text);
-        }
-        Err(e) => {
-            println!("Tor connection failed: {}", e);
-        }
-    }
+    let response = client
+        .get("https://check.torproject.org/api/ip")
+        .send()
+        .await
+        .map_err(|e| anyhow!("Tor connection failed: {}", e))?;
+
+    let text = response.text().await?;
+    println!("Tor connection active");
+    println!("Response: {}", text);
 
     Ok(())
 }

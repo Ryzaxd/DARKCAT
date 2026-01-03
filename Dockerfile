@@ -3,7 +3,7 @@ FROM rust:1.84-slim as builder
 
 WORKDIR /usr/src/app
 
-# Install build dependencies (including cmake and nasm for aws-lc-sys)
+# Build deps (cmake+nasm kan være nødvendigt for visse crypto deps; ok at beholde)
 RUN apt-get update && \
     apt-get install -y pkg-config libssl-dev cmake nasm && \
     rm -rf /var/lib/apt/lists/*
@@ -11,16 +11,14 @@ RUN apt-get update && \
 # Copy manifests
 COPY Cargo.toml Cargo.lock ./
 
-# Create a dummy main.rs to cache dependencies
+# Cache deps
 RUN mkdir src && \
     echo "fn main() {}" > src/main.rs && \
     cargo build --release && \
     rm -rf src
 
-# Copy source code
+# Copy source + build
 COPY src ./src
-
-# Build the application
 RUN cargo build --release
 
 # Runtime stage
@@ -28,19 +26,17 @@ FROM debian:bookworm-slim
 
 WORKDIR /app
 
-# Install runtime dependencies (including Tor)
+# Runtime deps: Tor + certs + curl til readiness-check
 RUN apt-get update && \
     apt-get install -y ca-certificates libssl3 tor curl && \
     rm -rf /var/lib/apt/lists/*
 
-# Copy the binary from builder
+# Copy binary
 COPY --from=builder /usr/src/app/target/release/DARKCAT /usr/local/bin/darkcat
 
-# Copy entrypoint script
-COPY docker-entrypoint.sh /app/
+# Entrypoint
+COPY docker-entrypoint.sh /app/docker-entrypoint.sh
 RUN chmod +x /app/docker-entrypoint.sh
-
-EXPOSE 8080
 
 ENTRYPOINT ["/app/docker-entrypoint.sh"]
 CMD ["status"]

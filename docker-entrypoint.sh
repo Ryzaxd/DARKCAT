@@ -1,48 +1,22 @@
 #!/bin/bash
-set -e
+set -euo pipefail
 
-# Enable debugging
-set -x
-
-echo "Starting Tor service..."
+echo "Starting Tor..."
 tor &
-TOR_PID=$!
 
-echo "Waiting for Tor to bootstrap..."
+echo "Waiting for Tor SOCKS to become ready..."
 MAX_WAIT=60
 WAITED=0
 
-while [ $WAITED -lt $MAX_WAIT ]; do
-    if curl -s --socks5-hostname 127.0.0.1:9050 https://check.torproject.org/api/ip > /dev/null 2>&1; then
-        echo "Tor is ready!"
-        break
-    fi
-
-    if [ $WAITED -eq 0 ]; then
-        echo -n "Bootstrapping"
-    else
-        echo -n "."
-    fi
-
-    sleep 2
-    WAITED=$((WAITED + 2))
+until curl -s --socks5-hostname 127.0.0.1:9050 https://check.torproject.org/api/ip >/dev/null 2>&1; do
+  sleep 2
+  WAITED=$((WAITED + 2))
+  echo "  ... ${WAITED}s"
+  if [ $WAITED -ge $MAX_WAIT ]; then
+    echo "Tor not ready after ${MAX_WAIT}s (continuing anyway)."
+    break
+  fi
 done
 
-echo ""
-
-if [ $WAITED -ge $MAX_WAIT ]; then
-    echo "Warning: Tor may not be fully ready, but continuing anyway..."
-fi
-
-echo "Running DARKCAT..."
-/usr/local/bin/darkcat "$@"
-
-# Keep Tor running
-wait $TOR_PID
-
-# Add network test
-echo "Testing network connectivity..."
-ping -c 1 google.com || echo "Warning: No network connectivity"
-
-# Start your application with proper error handling
-exec "$@" 2>&1
+echo "Running DARKCAT with args: $*"
+exec /usr/local/bin/darkcat "$@"
