@@ -30,7 +30,7 @@ WORKDIR /app
 
 # Install runtime dependencies (including Tor)
 RUN apt-get update && \
-    apt-get install -y ca-certificates libssl3 tor && \
+    apt-get install -y ca-certificates libssl3 tor curl && \
     rm -rf /var/lib/apt/lists/*
 
 # Copy the binary from builder
