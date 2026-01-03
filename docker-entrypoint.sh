@@ -34,8 +34,8 @@ if [ $WAITED -ge $MAX_WAIT ]; then
     echo "Warning: Tor may not be fully ready, but continuing anyway..."
 fi
 
-echo "Running forensics tool..."
-/usr/local/bin/DARKCAT "$@"
+echo "Running DARKCAT..."
+/usr/local/bin/darkcat "$@"
 
 # Keep Tor running
 wait $TOR_PID

@@ -34,7 +34,7 @@ RUN apt-get update && \
     rm -rf /var/lib/apt/lists/*
 
 # Copy the binary from builder
-COPY --from=builder /usr/src/app/target/release/DARKCAT /usr/local/bin/darkweb-forensics
+COPY --from=builder /usr/src/app/target/release/DARKCAT /usr/local/bin/darkcat
 
 # Copy entrypoint script
 COPY docker-entrypoint.sh /app/
