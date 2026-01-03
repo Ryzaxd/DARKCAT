@@ -1,6 +1,9 @@
 #!/bin/bash
 set -e
 
+# Enable debugging
+set -x
+
 echo "Starting Tor service..."
 tor &
 TOR_PID=$!
@@ -32,7 +35,14 @@ if [ $WAITED -ge $MAX_WAIT ]; then
 fi
 
 echo "Running forensics tool..."
-/usr/local/bin/darkweb-forensics "$@"
+/usr/local/bin/DARKCAT "$@"
 
 # Keep Tor running
 wait $TOR_PID
+
+# Add network test
+echo "Testing network connectivity..."
+ping -c 1 google.com || echo "Warning: No network connectivity"
+
+# Start your application with proper error handling
+exec "$@" 2>&1
