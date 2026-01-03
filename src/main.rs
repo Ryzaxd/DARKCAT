@@ -40,12 +40,6 @@ enum Commands {
         #[arg(short, long)]
         url: String,
     },
-    /// Scan multiple URLs from a file (one per line)
-    BatchScan {
-        /// Path to file containing URLs (one per line)
-        #[arg(short, long)]
-        file: String,
-    },
     /// Check Tor connectivity
     Status,
 }
@@ -61,10 +55,6 @@ async fn main() -> Result<()> {
             let url = normalize_url(&url);
             println!("Scanning: {}", url);
             scan_onion(&url).await?;
-        }
-        Commands::BatchScan { file } => {
-            println!("Batch scanning file: {}", file);
-            batch_scan(&file).await?;
         }
         Commands::Status => {
             println!("Checking Tor connection...");
@@ -82,29 +72,6 @@ fn normalize_url(input: &str) -> String {
     } else {
         format!("http://{}", trimmed)
     }
-}
-
-async fn batch_scan(path: &str) -> Result<()> {
-    use tokio::io::{AsyncBufReadExt, BufReader};
-    use tokio::fs::File;
-
-    let file = File::open(path).await
-        .map_err(|e| anyhow!("Could not open file '{}': {}", path, e))?;
-    let mut lines = BufReader::new(file).lines();
-
-    while let Some(line) = lines.next_line().await? {
-        let line = line.trim();
-        if line.is_empty() || line.starts_with('#') {
-            continue;
-        }
-        let url = normalize_url(line);
-        println!("\n=== Scanning: {} ===", url);
-        if let Err(e) = scan_onion(&url).await {
-            eprintln!("Scan failed for {}: {}", url, e);
-        }
-    }
-
-    Ok(())
 }
 
 async fn scan_onion(url: &str) -> Result<()> {
