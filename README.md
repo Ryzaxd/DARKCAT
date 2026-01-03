@@ -91,19 +91,19 @@ cd DARKCAT
 Build the Docker image:
 
 ```bash
-docker build -t darkcat .
+sudo docker build -t darkcat .
 ```
 
 Check Tor connectivity:
 
 ```bash
-docker run --rm darkcat status
+sudo docker run --rm darkcat status
 ```
 
 Scan an onion service:
 
 ```bash
-docker run --rm darkcat scan --url exampleonionaddress.onion
+sudo docker run --rm darkcat scan --url exampleonionaddress.onion
 ```
 
 The tool automatically normalizes URLs, so both of the following are valid:
