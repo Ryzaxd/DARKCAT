@@ -20,7 +20,7 @@ _pb__\,`"=,,,=="',___,,,-----'''----'_'_'_''-;''
                              `' 
 ```
 
-DARKCAT is a proof-of-concept command-line tool for passive dark web
+DARKCAT is a proof-of-concept command-line tool for dark web
 reconnaissance in a digital forensics context.
 
 The tool is written in Rust and performs controlled HTTP requests to
@@ -31,7 +31,7 @@ The tool is written in Rust and performs controlled HTTP requests to
 ## Purpose
 
 The purpose of DARKCAT is to demonstrate how dark web reconnaissance
-can be performed in a controlled, passive and forensics-oriented way.
+can be performed in a controlled and forensics-oriented way.
 
 Dark web data can serve as a secondary source of indicators in digital
 forensics investigations, for example when assessing potential data
@@ -41,7 +41,7 @@ leaks, exposed services or historical compromises.
 
 ## Scope and Limitations
 
-DARKCAT is intentionally limited to passive reconnaissance.
+DARKCAT is intentionally limited to basic reconnaissance.
 
 The tool performs a single HTTP GET request and does not crawl,
 authenticate, exploit vulnerabilities or interact with dynamic
@@ -66,7 +66,7 @@ This layered setup reduces risk and improves reproducibility.
 
 ## Features
 
-- Passive scan of .onion and clearnet URLs
+- Basic scan of .onion and clearnet URLs
 - Automatic routing through Tor
 - HTTP response inspection
 - Tor connectivity verification
@@ -112,3 +112,9 @@ The tool automatically normalizes URLs, so both of the following are valid:
 exampleonionaddress.onion
 http://exampleonionaddress.onion
 ```
+
+---
+
+## Example of output
+
+<img width="602" height="409" alt="image" src="https://github.com/user-attachments/assets/6a057468-a503-4ae0-b800-ef64ab31aad8" />
